@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="TinyTouch is an open-source ESP32-S3 biometric key for local screen unlock, host pairing, and PIV SmartCard authentication on macOS and Linux.">
+  <title>TinyTouch — Local Biometric Access</title>
+  <link rel="icon" href="assets/tinytouch.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="tokens.css">
+  <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html { overflow-x: clip; scroll-behavior: smooth; }
+    body { margin: 0; overflow-x: clip; background: var(--surface); color: var(--ink-secondary); font: 400 var(--text-base)/1.58 var(--font-ui); }
+    img { display: block; max-width: 100%; height: auto; }
+    figure { margin: 0; }
+    a { color: inherit; }
+    code { padding: .1em .35em; border-radius: 6px; background: var(--surface-muted); color: var(--ink); font: 500 .88em/1.4 var(--font-mono); }
+    :focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+    .skip { position: absolute; left: -9999px; top: var(--s-sm); z-index: 500; padding: var(--s-xs) var(--s-md); border-radius: var(--r-control); background: var(--ink); color: var(--surface); text-decoration: none; }
+    .skip:focus-visible { left: var(--s-md); }
+    .wrap { width: min(100%, 72rem); margin-inline: auto; }
+    h1, h2, h3 { margin: 0; min-width: 0; color: var(--ink); font-family: var(--font-ui); font-style: normal; font-weight: 700; letter-spacing: -.035em; overflow-wrap: anywhere; }
+    h1 { max-width: 10ch; font-size: var(--text-display); line-height: .98; }
+    h2 { max-width: 18ch; font-size: clamp(var(--text-xl), 3vw, var(--text-2xl)); line-height: 1.05; }
+    h3 { font-size: var(--text-md); line-height: 1.2; }
+    p { margin: 0; }
+    .lede { max-width: 56ch; margin-top: var(--s-lg); color: var(--ink-secondary); font-size: var(--text-md); }
+    .eyebrow { color: var(--ink-muted); font-size: var(--text-sm); font-weight: 600; }
+    .btn { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; padding: var(--s-sm) var(--s-lg); border: 1px solid transparent; border-radius: var(--r-control); font: 600 var(--text-sm)/1 var(--font-ui); text-decoration: none; white-space: nowrap; cursor: pointer; transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease), transform var(--fast) var(--ease); }
+    .btn--primary { background: var(--blue); color: var(--blue-ink); }
+    .btn--secondary { border-color: var(--line-strong); color: var(--ink); background: transparent; }
+    .btn[disabled] { opacity: .5; cursor: not-allowed; pointer-events: none; }
+    @media (hover: hover) and (pointer: fine) { .btn--primary:hover { background: var(--blue-hover); transform: translateY(-1px); } .btn--secondary:hover { background: var(--surface-raised); } }
+    .nav { position: sticky; top: 0; z-index: var(--z-nav); padding: var(--s-xs) var(--s-md); border-bottom: 1px solid var(--line); background: color-mix(in oklch, var(--surface) 84%, transparent); backdrop-filter: blur(14px); }
+    .nav__inner { display: flex; min-height: 64px; align-items: center; justify-content: space-between; gap: var(--s-md); }
+    .brand { display: inline-flex; align-items: center; gap: var(--s-xs); color: var(--ink); font-weight: 700; text-decoration: none; white-space: nowrap; }
+    .brand img { width: 28px; height: 28px; flex: none; }
+    .nav__links { display: flex; align-items: center; gap: var(--s-md); }
+    .nav__links a { min-height: 44px; display: inline-flex; align-items: center; color: var(--ink-muted); font-size: var(--text-sm); font-weight: 500; text-decoration: none; white-space: nowrap; }
+    .nav__links a:hover { color: var(--ink); }
+    .nav__menu { display: none; min-height: 44px; padding: var(--s-xs) var(--s-md); border: 1px solid var(--line-strong); border-radius: var(--r-control); background: transparent; color: var(--ink); font: 600 var(--text-sm)/1 var(--font-ui); cursor: pointer; white-space: nowrap; }
+    .nav__drawer { display: none; padding-block: var(--s-xs) var(--s-md); border-top: 1px solid var(--line); }
+    .nav__drawer[open] { display: block; }
+    .nav__drawer a { display: flex; min-height: 44px; align-items: center; padding: var(--s-xs) var(--s-sm); color: var(--ink); text-decoration: none; white-space: nowrap; }
+    .hero { padding: var(--s-2xl) var(--s-md); border-bottom: 1px solid var(--line); }
+    .hero__grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-xl); align-items: center; }
+    .hero__actions { display: flex; flex-wrap: wrap; gap: var(--s-sm); margin-top: var(--s-xl); }
+    .hero__device { display: flex; justify-content: center; }
+    .hero__device img { width: min(100%, 34rem); }
+    .section { padding: var(--s-2xl) var(--s-md); border-bottom: 1px solid var(--line); }
+    .section--muted { background: var(--surface-raised); }
+    .section__head { display: flex; flex-direction: column; gap: var(--s-sm); max-width: 58ch; margin-bottom: var(--s-xl); }
+    .section__head p { color: var(--ink-muted); }
+    .benefits { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-sm); }
+    .benefit { padding: var(--s-lg); border: 1px solid var(--line); border-radius: var(--r-card); background: var(--surface); }
+    .benefit p { margin-top: var(--s-xs); color: var(--ink-muted); }
+    .split { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-xl); align-items: center; }
+    .split__image { border: 1px solid var(--line); border-radius: var(--r-card); overflow: hidden; background: var(--surface); }
+    .split__media { display: flex; justify-content: center; }
+    .split__media img { width: min(100%, 21rem); }
+    .split__copy { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s-md); min-width: 0; }
+    .segmented { display: flex; flex-wrap: wrap; gap: var(--s-2xs); padding: var(--s-2xs); border: 1px solid var(--line); border-radius: var(--r-card); background: var(--surface-raised); }
+    .segmented__tab { min-height: 44px; padding: var(--s-xs) var(--s-md); border: 0; border-radius: var(--r-control); background: transparent; color: var(--ink-muted); font: 600 var(--text-sm)/1 var(--font-ui); white-space: nowrap; cursor: pointer; transition: background var(--fast) var(--ease), color var(--fast) var(--ease); }
+    .segmented__tab[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px var(--scrim); }
+    .caption { color: var(--ink-muted); font-size: var(--text-sm); }
+    .steps { display: grid; grid-template-columns: minmax(0, 1fr); border-top: 1px solid var(--line-strong); }
+    .step { display: grid; grid-template-columns: 3rem minmax(0, 1fr); gap: var(--s-md); padding: var(--s-lg) 0; border-bottom: 1px solid var(--line); }
+    .step__number { color: var(--blue); font-weight: 700; font-variant-numeric: tabular-nums; }
+    .step p { margin-top: var(--s-xs); color: var(--ink-muted); }
+    .disclosures { margin-top: var(--s-xl); }
+    .build-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-xl); align-items: start; }
+    .table-wrap { width: 100%; overflow-x: auto; }
+    .parts { width: 100%; border-collapse: collapse; border-top: 1px solid var(--line-strong); }
+    .parts th, .parts td { padding: var(--s-sm); border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    .parts th { color: var(--ink); font-size: var(--text-sm); }
+    .parts td { color: var(--ink-muted); font-size: var(--text-sm); }
+    .parts a { color: var(--blue); font-weight: 500; text-decoration: none; }
+    .parts a:hover { text-decoration: underline; }
+    .warning { padding: var(--s-md); border: 1px solid var(--warning); border-radius: var(--r-small); background: color-mix(in oklch, var(--warning) 8%, var(--surface)); color: var(--ink); }
+    .warning strong { color: var(--warning); }
+    .flasher { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-xl); margin-bottom: var(--s-xl); }
+    .flash-panel { padding: var(--s-xl); border: 1px solid var(--line); border-radius: var(--r-card); background: var(--surface-raised); }
+    .flash-panel p { margin: var(--s-md) 0 var(--s-lg); color: var(--ink-secondary); }
+    .flash-actions { display: flex; flex-wrap: wrap; gap: var(--s-sm); align-items: center; }
+    esp-web-install-button { --esp-tools-button-color: var(--blue); --esp-tools-button-text-color: var(--blue-ink); --esp-tools-button-border-radius: var(--r-control); }
+    .status { display: flex; gap: var(--s-xs); margin-top: var(--s-md); color: var(--ink-muted); font-size: var(--text-sm); }
+    .status__dot { width: 8px; height: 8px; margin-top: .45em; border-radius: 50%; background: var(--ink-muted); flex: none; }
+    .status__dot[data-state="ready"] { background: var(--green); }
+    .status__dot[data-state="unsupported"] { background: var(--warning); }
+    .release { padding: var(--s-xl); border-radius: var(--r-card); background: var(--code); color: var(--code-ink); display: flex; flex-direction: column; gap: var(--s-xs); }
+    .release h3 { color: var(--code-ink); }
+    .release__label { color: var(--code-muted); font-size: var(--text-sm); }
+    .release__version { display: block; margin-bottom: var(--s-sm); font-size: var(--text-xl); font-weight: 700; font-variant-numeric: tabular-nums; }
+    .release__links { display: flex; flex-wrap: wrap; gap: var(--s-sm); margin-top: var(--s-md); }
+    .release a { min-height: 44px; display: inline-flex; align-items: center; color: var(--code-ink); font-weight: 600; white-space: nowrap; }
+    .code { margin-top: var(--s-sm); overflow-x: auto; padding: var(--s-md); border-radius: var(--r-small); background: var(--code-raised); color: var(--code-ink); font: 500 var(--text-sm)/1.6 var(--font-mono); }
+    details { padding: var(--s-xs) var(--s-sm); border-top: 1px solid var(--line-strong); border-bottom: 1px solid var(--line); }
+    details + details { border-top: 0; }
+    summary { min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: var(--s-md); cursor: pointer; color: var(--ink); font-weight: 600; list-style: none; }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; color: var(--ink-muted); font-size: var(--text-md); font-weight: 400; flex: none; }
+    details[open] > summary::after { content: "−"; }
+    .details__body { padding: var(--s-xs) 0 var(--s-sm); color: var(--ink-secondary); display: flex; flex-direction: column; gap: var(--s-sm); }
+    .details__body ol, .details__body ul { margin: 0; padding-left: var(--s-lg); display: grid; gap: var(--s-2xs); }
+    .faq { display: grid; grid-template-columns: minmax(0, 1fr); }
+    .footer { padding: var(--s-3xl) var(--s-md) var(--s-xl); }
+    .footer__statement { max-width: 11ch; color: var(--ink); font-size: clamp(var(--text-xl), 5vw, var(--text-display)); font-weight: 700; letter-spacing: -.04em; line-height: .98; }
+    .footer__meta { display: flex; flex-direction: column; gap: var(--s-sm); margin-top: var(--s-xl); color: var(--ink-muted); font-size: var(--text-sm); }
+    .footer__links { display: flex; flex-wrap: wrap; gap: var(--s-md); }
+    .footer__links a { min-height: 44px; display: inline-flex; align-items: center; color: var(--ink-muted); text-decoration: none; white-space: nowrap; }
+    .footer__links a:hover { color: var(--blue); }
+    @media (min-width: 48rem) { .benefits { grid-template-columns: repeat(3, minmax(0, 1fr)); } .build-grid { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); } }
+    @media (min-width: 60rem) { .hero { padding-top: var(--s-3xl); padding-bottom: var(--s-3xl); } .section { padding-top: var(--s-3xl); padding-bottom: var(--s-3xl); } .hero__grid, .flasher { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: var(--s-2xl); } .split { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--s-2xl); } .split--reverse > :first-child { order: 2; } .footer__meta { flex-direction: row; align-items: center; justify-content: space-between; } }
+    @media (max-width: 47.99rem) { .nav__links, .nav__cta { display: none; } .nav__menu { display: inline-flex; align-items: center; } }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { transition-duration: 150ms !important; } }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="nav">
+    <div class="wrap nav__inner">
+      <a class="brand" href="#top">
+        <img src="assets/tinytouch.svg" alt="" width="28" height="28">
+        TinyTouch
+      </a>
+      <nav class="nav__links" aria-label="Primary"><a href="#desktop">Desktop App</a><a href="#build">Build</a><a href="#flash">Flash</a><a href="#help">Help</a></nav>
+      <a class="btn btn--primary nav__cta" href="#setup">Get Started</a>
+      <button class="nav__menu" type="button" aria-expanded="false" aria-controls="drawer">Menu</button>
+    </div>
+    <div class="nav__drawer" id="drawer"><nav class="wrap" aria-label="Mobile"><a href="#desktop">Desktop App</a><a href="#build">Build</a><a href="#flash">Flash</a><a href="#help">Help</a><a href="#setup">Get Started</a></nav></div>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top">
+      <div class="wrap hero__grid">
+        <div>
+          <p class="eyebrow">Open-source biometric access</p>
+          <h1>Your fingerprint. Your computer. Your control.</h1>
+          <p class="lede">TinyTouch is an ESP32-S3 biometric key for local screen unlock, host pairing, and PIV SmartCard authentication on macOS and Linux.</p>
+          <div class="hero__actions"><a class="btn btn--primary" href="#setup">Get Started</a><a class="btn btn--secondary" href="#build">Build Your Own</a></div>
+        </div>
+        <figure class="hero__device"><img src="assets/hero.png" alt="TinyTouch biometric USB key"></figure>
+      </div>
+    </section>
+
+    <section class="section section--muted">
+      <div class="wrap">
+        <div class="section__head"><h2>Designed to stay local.</h2><p>TinyTouch keeps biometric access and host pairing close to the computer you use. No account or telemetry connection is required.</p></div>
+        <div class="benefits">
+          <article class="benefit"><h3>Local credentials</h3><p>Host credentials stay in macOS Keychain or Linux Secret Service, not on TinyTouch.</p></article>
+          <article class="benefit"><h3>One key, many hosts</h3><p>Pair one TinyTouch key with up to 8 computers and move between them without re-enrollment.</p></article>
+          <article class="benefit"><h3>HID or PIV</h3><p>Use secure HID password typing or a <code>CCID</code> PIV SmartCard according to the host workflow.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="desktop">
+      <div class="wrap split">
+        <figure class="split__image"><img id="app-preview" src="assets/screenshot-touchid.png" alt="TinyTouch Desktop fingerprint management view"></figure>
+        <div class="split__copy">
+          <p class="eyebrow">TinyTouch Desktop</p>
+          <h2>Set up access from one place.</h2>
+          <p>Enroll fingerprints, store host credentials locally, switch between HID and PIV modes, and manage firmware or helper services before relying on lock-screen unlock.</p>
+          <div class="segmented" role="group" aria-label="Desktop app views">
+            <button class="segmented__tab" type="button" aria-pressed="true" data-img="assets/screenshot-touchid.png" data-alt="TinyTouch Desktop Touch ID enrollment view" data-caption="Touch ID: enroll and test fingerprints stored as on-sensor templates.">Touch ID</button>
+            <button class="segmented__tab" type="button" aria-pressed="false" data-img="assets/screenshot-passwords.png" data-alt="TinyTouch Desktop Passwords and host pairing view" data-caption="Passwords: store credentials in Keychain or Secret Service and pair up to 8 computers.">Passwords</button>
+            <button class="segmented__tab" type="button" aria-pressed="false" data-img="assets/screenshot-modes.png" data-alt="TinyTouch Desktop HID and PIV mode selector" data-caption="Modes: choose HID keyboard layout (US, UK, DE, FR, HR, Auto) or CCID PIV SmartCard.">Modes</button>
+            <button class="segmented__tab" type="button" aria-pressed="false" data-img="assets/screenshot-device.png" data-alt="TinyTouch Desktop Device status and OTA view" data-caption="Device: check helper service health, serial status, and install OTA firmware updates.">Device</button>
+          </div>
+          <p class="caption" id="app-caption" aria-live="polite">Touch ID: enroll and test fingerprints stored as on-sensor templates.</p>
+          <a class="btn btn--secondary" href="#setup">Set Up TinyTouch</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--muted" id="setup">
+      <div class="wrap">
+        <div class="section__head"><h2>Start in three steps.</h2><p>Pre-assembled devices normally arrive ready to use. DIY boards add firmware flashing first.</p></div>
+        <div class="steps">
+          <article class="step"><span class="step__number">1</span><div><h3>Connect TinyTouch</h3><p>Use a data-capable USB cable directly on your computer and confirm the sensor LED ring flashes once during boot.</p></div></article>
+          <article class="step"><span class="step__number">2</span><div><h3>Install TinyTouch Desktop</h3><p>Download the matching macOS disk image or Linux package from the latest GitHub Release.</p></div></article>
+          <article class="step"><span class="step__number">3</span><div><h3>Enroll and pair</h3><p>Enroll a fingerprint in Touch ID, save your login credential locally in Passwords, then select Pair Machine and touch the sensor.</p></div></article>
+        </div>
+
+        <div class="disclosures">
+          <details>
+            <summary>macOS setup, PIV SmartCard, CLI, and uninstall</summary>
+            <div class="details__body">
+              <ol>
+                <li>Download <code>tinyTouch-&lt;version&gt;.dmg</code> from <a id="macos-dmg" href="https://github.com/thangvv-tech/tinytouch-release/releases/latest">GitHub Releases</a>, open it, and drag <strong>TinyTouch.app</strong> into <strong>Applications</strong>.</li>
+                <li>If Gatekeeper blocks first launch, open <strong>System Settings</strong> &gt; <strong>Privacy &amp; Security</strong> and select <strong>Open</strong>.</li>
+                <li>In TinyTouch Desktop, enroll fingerprints under <strong>Touch ID</strong>, save your password in macOS Keychain under <strong>Passwords</strong>, select <strong>Pair Machine</strong>, and install the helper under <strong>Device</strong>.</li>
+                <li>Lock the screen with <code>Command-Control-Q</code> and touch an enrolled finger to verify unlock.</li>
+              </ol>
+              <p><strong>Optional PIV SmartCard:</strong> switch to <strong>PIV Mode</strong> under <strong>Modes</strong>, then pair the token certificate with your macOS account:</p>
+              <pre class="code">sc_auth pairing_ui -s</pre>
+              <p><strong>Optional CLI:</strong> extract <code>tinyTouch-&lt;version&gt;-darwin-universal.tar.gz</code> into <code>/usr/local/bin/</code> or <code>~/.local/bin/</code>:</p>
+              <pre class="code">tinytouch status
+tinytouch pair
+tinytouch helper install</pre>
+              <p><strong>Uninstall:</strong> run <strong>Uninstall Helper</strong> in <strong>Device</strong>, delete <code>/Applications/TinyTouch.app</code>, and optionally clear Keychain with <code>security delete-generic-password -s "tinytouch"</code>.</p>
+            </div>
+          </details>
+
+          <details>
+            <summary>Linux setup (.deb, tarball, udev rules, PIV, and uninstall)</summary>
+            <div class="details__body">
+              <p><strong>Debian / Ubuntu (<code>amd64</code> or <code>arm64</code>):</strong> installing the <code>.deb</code> package configures binaries, <code>udev</code> rules, user helper service, desktop launcher, and PIV dependencies.</p>
+              <pre class="code">sudo apt install ./tinyTouch-*-linux-*.deb
+systemctl --user start tinytouch-helper
+tinytouch-desktop</pre>
+              <p><strong>Portable archive (Fedora, Arch, openSUSE):</strong> extract <code>tinyTouch-&lt;version&gt;-linux-*.tar.gz</code> into <code>~/.local/bin/</code> and add USB <code>udev</code> rules for TinyTouch (<code>303a:4001</code>):</p>
+              <pre class="code">tar -xzf tinyTouch-*-linux-*.tar.gz
+cd tinyTouch-*-linux-*
+mkdir -p ~/.local/bin
+cp tinytouch tinytouch-desktop tinytouch-helper ~/.local/bin/
+chmod +x ~/.local/bin/tinytouch*
+
+sudo tee /etc/udev/rules.d/99-tinytouch.rules &gt; /dev/null &lt;&lt;'EOF'
+SUBSYSTEM=="tty", ATTRS{idVendor}=="303a", ATTRS{idProduct}=="4001", MODE="0666", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="303a", ATTRS{idProduct}=="4001", MODE="0666", TAG+="uaccess"
+EOF
+
+sudo udevadm control --reload-rules
+sudo udevadm trigger --subsystem-match=tty --attr-match=idVendor=303a
+sudo udevadm trigger --subsystem-match=usb --attr-match=idVendor=303a</pre>
+              <p>Reconnect TinyTouch after reloading <code>udev</code>. Open TinyTouch Desktop (supports English and Tiếng Việt), or use the CLI: <code>tinytouch status</code>, <code>tinytouch password</code>, <code>tinytouch pair</code>, and lock with <code>Super-L</code>.</p>
+              <p><strong>Optional PIV SmartCard:</strong> install <code>pcscd opensc libccid libpam-pkcs11</code> (Debian/Ubuntu), <code>pcsc-lite opensc ccid pam_pkcs11</code> (Fedora), or <code>pcsclite opensc ccid pam_pkcs11</code> (Arch), enable <code>sudo systemctl enable --now pcscd</code>, and run <code>tinytouch mode piv</code>.</p>
+              <p><strong>Uninstall:</strong> <code>sudo apt purge tinytouch</code>, or for portable installs run <code>tinytouch helper uninstall</code> and remove <code>~/.local/bin/tinytouch*</code>, <code>~/.local/share/applications/tinytouch.desktop</code>, and <code>/etc/udev/rules.d/99-tinytouch.rules</code>.</p>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="build">
+      <div class="wrap split split--reverse">
+        <figure class="split__media"><img src="assets/device-case.png" alt="TinyTouch 3D printed enclosure"></figure>
+        <div class="split__copy">
+          <p class="eyebrow">DIY hardware</p>
+          <h2>Build TinyTouch your way.</h2>
+          <p>Wire an ESP32-S3 SuperMini or Seeed Studio XIAO ESP32-S3 to a supported optical UART fingerprint sensor. Print the matching snap-fit STL or STEP enclosure and flash firmware below.</p>
+          <a class="btn btn--secondary" href="https://github.com/thangvv-tech/tinytouch-release/tree/master/hardware/case">Browse Enclosure Files</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--muted">
+      <div class="wrap build-grid">
+        <div>
+          <div class="section__head"><h2>Parts and wiring.</h2><p>Solder five 30 AWG flexible silicone wires (about 35 mm long) between the optical sensor and ESP32-S3.</p></div>
+          <p class="warning"><strong>3.3V only.</strong> Connecting sensor VCC to 5V permanently damages the optical module.</p>
+        </div>
+        <div class="table-wrap">
+          <table class="parts">
+            <thead><tr><th>Item / Signal</th><th>Specification / ESP32-S3 pin</th></tr></thead>
+            <tbody>
+              <tr><th>Board</th><td>ESP32-S3 SuperMini or Seeed Studio XIAO ESP32-S3, 4 MB+ flash</td></tr>
+              <tr><th>Sensor</th><td>Grow ZW101, ZW111, R502, or R503 optical UART sensor</td></tr>
+              <tr><th>VCC (red)</th><td>3.3V</td></tr>
+              <tr><th>GND (black)</th><td>GND</td></tr>
+              <tr><th>TX (green, sensor out)</th><td>GPIO 6 (UART1 RX)</td></tr>
+              <tr><th>RX (yellow, sensor in)</th><td>GPIO 7 (UART1 TX)</td></tr>
+              <tr><th>WAKE (blue)</th><td>GPIO 2</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="wrap disclosures">
+        <details>
+          <summary>3D printable enclosure files and print settings</summary>
+          <div class="details__body">
+            <p>Match top and bottom shell files to your board revision before slicing:</p>
+            <div class="table-wrap">
+              <table class="parts">
+                <thead><tr><th>Board</th><th>Top cap</th><th>Bottom shell</th><th>Profile</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <th>ESP32-S3 SuperMini V1</th>
+                    <td><a href="https://github.com/thangvv-tech/tinytouch-release/blob/master/hardware/case/tinytouch-v1-top.step">tinytouch-v1-top.step</a> or <a href="https://github.com/thangvv-tech/tinytouch-release/blob/master/hardware/case/case_top.stl">case_top.stl</a></td>
+                    <td><a href="https://github.com/thangvv-tech/tinytouch-release/blob/master/hardware/case/tinytouch-supermini-v1-bottom.step">tinytouch-supermini-v1-bottom.step</a> or <a href="https://github.com/thangvv-tech/tinytouch-release/blob/master/hardware/case/case_bottom.stl">case_bottom.stl</a></td>
+                    <td>30.0 × 30.0 mm</td>
+                  </tr>
+                  <tr>
+                    <th>ESP32-S3 SuperMini V2</th>
+                    <td><a href="https://github.com/thangvv-tech/tinytouch-release/blob/master/hardware/case/tinytouch-v2-top.step">tinytouch-v2-top.step</a></td>
+                    <td><a href="https://github.com/thangvv-tech/tinytouch-release/blob/master/hardware/case/tinytouch-supermini-v2-bottom.step">tinytouch-supermini-v2-bottom.step</a></td>
+                    <td>27.7 × 27.7 mm</td>
+                  </tr>
+                  <tr>
+                    <th>Seeed XIAO ESP32-S3</th>
+                    <td><a href="https://github.com/thangvv-tech/tinytouch-release/blob/master/hardware/case/tinytouch-v1-top.step">tinytouch-v1-top.step</a></td>
+                    <td><a href="https://github.com/thangvv-tech/tinytouch-release/blob/master/hardware/case/tinytouch-xiao-v1-bottom.step">tinytouch-xiao-v1-bottom.step</a></td>
+                    <td>XIAO USB cutout</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <ul>
+              <li><strong>Print settings:</strong> FDM or SLA resin; PETG recommended (PLA/ABS work); 0.16–0.20 mm layer height; 20–30% gyroid or grid infill; flat exterior faces on the build plate; no supports needed.</li>
+              <li><strong>Fit &amp; assembly:</strong> 0.2 mm snap-fit tolerance (scale to 100.5% if tight). Thread the 5-pin harness through the top opening, seat the sensor flush in the bezel, solder ~35 mm wires, align USB-C in the bottom shell, and snap shut.</li>
+            </ul>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section class="section" id="flash">
+      <div class="wrap">
+        <div class="section__head"><h2>Flash firmware when you need it.</h2><p>Browser flashing works in desktop Chrome and Edge when this site hosts same-origin firmware binaries. Every release also ships an offline script bundle.</p></div>
+        <div class="flasher">
+          <div class="flash-panel">
+            <h3>Web Flasher</h3>
+            <p>Connect an ESP32-S3 TinyTouch key with a data cable, choose <code>ESP32-S3</code> or <code>USB JTAG/serial debug unit</code>, and flash directly from your browser.</p>
+            <div class="flash-actions">
+              <esp-web-install-button id="web-flasher" manifest="firmware/manifest.json">
+                <button class="btn btn--primary" id="flash-btn" slot="activate" type="button">Connect &amp; Flash</button>
+                <span slot="unsupported">Web Serial requires desktop Chrome or Edge.</span>
+              </esp-web-install-button>
+              <a class="btn btn--secondary" id="firmware-zip" href="https://github.com/thangvv-tech/tinytouch-release/releases/latest">Download Firmware</a>
+            </div>
+            <p class="status" aria-live="polite"><span class="status__dot" id="serial-dot" aria-hidden="true"></span><span id="serial-status">Checking Web Serial and firmware images…</span></p>
+          </div>
+          <aside class="release">
+            <p class="release__label">Latest GitHub Release</p>
+            <span class="release__version" id="release-version">Checking…</span>
+            <h3 id="release-name">TinyTouch firmware</h3>
+            <p class="release__label" id="release-date">Loading release details…</p>
+            <div class="release__links">
+              <a id="release-link" href="https://github.com/thangvv-tech/tinytouch-release/releases/latest">View Release</a>
+            </div>
+          </aside>
+        </div>
+
+        <details>
+          <summary>Use the offline flash bundle (macOS, Linux, Windows)</summary>
+          <div class="details__body">
+            <p>Download <code>tinytouch-&lt;version&gt;-firmware.zip</code> and extract it. If the script reports <code>esptool</code> is missing, install Python 3 and run <code>pip install esptool</code>.</p>
+            <pre class="code">unzip tinytouch-*-firmware.zip
+cd tinytouch-*-firmware
+chmod +x flash.sh
+./flash.sh</pre>
+            <p>On Windows, double-click <code>flash.bat</code> or run it from Command Prompt.</p>
+          </div>
+        </details>
+        <details>
+          <summary>OTA update from TinyTouch Desktop</summary>
+          <div class="details__body">
+            <p>For devices already running firmware <code>v0.1.0</code> or newer: open <strong>TinyTouch Desktop</strong> &gt; <strong>Device</strong>, choose <strong>Update Firmware Online</strong> or select a downloaded <code>tinytouch.bin</code>, then select <strong>Install OTA Update</strong>.</p>
+          </div>
+        </details>
+        <details>
+          <summary>Enter ROM bootloader mode</summary>
+          <div class="details__body">
+            <ol>
+              <li>Unplug the USB cable.</li>
+              <li>Hold the physical <code>BOOT</code> button on the ESP32-S3 board.</li>
+              <li>Reconnect USB while holding <code>BOOT</code>.</li>
+              <li>Release after 2 seconds, then retry flashing.</li>
+            </ol>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section class="section section--muted" id="help">
+      <div class="wrap">
+        <div class="section__head"><h2>Help when it matters.</h2><p>Check cable, USB permissions, and sensor glass before changing your configuration.</p></div>
+        <div class="faq">
+          <details><summary>TinyTouch is not detected</summary><div class="details__body"><p>Use a data-capable USB cable connected directly to your computer (unpowered hubs can drop voltage). On Linux, install the <code>.deb</code> package or add the <code>udev</code> rule for <code>303a:4001</code>, then replug the device.</p></div></details>
+          <details><summary>Fingerprint matching fails</summary><div class="details__body"><p>Clean the optical glass with a microfiber cloth and re-enroll the finger from slightly different angles. Very dry skin reduces optical contrast; test with a lightly moistened fingertip.</p></div></details>
+          <details><summary>Lock screen types wrong characters</summary><div class="details__body"><p>In TinyTouch Desktop, open <strong>Modes</strong> and set the matching physical keyboard layout: <strong>US</strong>, <strong>UK</strong>, <strong>DE</strong>, <strong>FR</strong>, <strong>HR</strong>, or <strong>Auto</strong>.</p></div></details>
+          <details><summary>Auto-unlock does not work</summary><div class="details__body"><p>Keep the lock-screen password field focused before touching the sensor. Verify the helper service is running: <code>launchctl list | grep com.tinytouch.helper</code> (macOS) or <code>systemctl --user status tinytouch-helper</code> (Linux).</p></div></details>
+          <details><summary>Can a stolen key reveal the host password?</summary><div class="details__body"><p>No. TinyTouch stores biometric templates and pairing keys only. Host unlock passwords remain encrypted in macOS Keychain or Linux Secret Service, and unlock requires both the paired machine and an enrolled fingerprint.</p></div></details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <p class="footer__statement">Keep access close.</p>
+      <div class="footer__meta">
+        <span>TinyTouch · Open-source ESP32-S3 biometric key · MIT License</span>
+        <nav class="footer__links" aria-label="Footer"><a href="#setup">Get Started</a><a href="#build">Build One</a><a href="#flash">Flash Firmware</a><a href="https://github.com/thangvv-tech/tinytouch-release">GitHub</a></nav>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const menu = document.querySelector('.nav__menu');
+    const drawer = document.getElementById('drawer');
+    menu.addEventListener('click', () => {
+      const open = drawer.hasAttribute('open');
+      drawer.toggleAttribute('open', !open);
+      menu.setAttribute('aria-expanded', String(!open));
+    });
+    drawer.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => {
+      drawer.removeAttribute('open');
+      menu.setAttribute('aria-expanded', 'false');
+    }));
+
+    const preview = document.getElementById('app-preview');
+    const caption = document.getElementById('app-caption');
+    const tabs = document.querySelectorAll('.segmented__tab');
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        tabs.forEach((item) => item.setAttribute('aria-pressed', 'false'));
+        tab.setAttribute('aria-pressed', 'true');
+        preview.src = tab.dataset.img;
+        preview.alt = tab.dataset.alt;
+        caption.textContent = tab.dataset.caption;
+      });
+    });
+
+    const dot = document.getElementById('serial-dot');
+    const status = document.getElementById('serial-status');
+    const flashBtn = document.getElementById('flash-btn');
+    const hasSerial = 'serial' in navigator && window.isSecureContext;
+
+    if (!hasSerial) {
+      dot.dataset.state = 'unsupported';
+      status.textContent = window.isSecureContext
+        ? 'Use desktop Chrome or Edge for Web Serial, or download the firmware bundle.'
+        : 'Web Serial requires HTTPS or localhost.';
+    } else {
+      fetch('firmware/bootloader.bin', { method: 'HEAD' })
+        .then((res) => {
+          if (res.ok) {
+            dot.dataset.state = 'ready';
+            status.textContent = 'Web Serial ready. Connect USB-C, then select Connect & Flash.';
+          } else {
+            throw new Error(res.status);
+          }
+        })
+        .catch(() => {
+          dot.dataset.state = 'unsupported';
+          if (flashBtn) flashBtn.disabled = true;
+          status.textContent = 'Firmware binaries are packaged during GitHub Pages deployment. Download the offline bundle for local flashing.';
+        });
+    }
+
+    fetch('https://api.github.com/repos/thangvv-tech/tinytouch-release/releases/latest', {
+      headers: { Accept: 'application/vnd.github+json' }
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error(response.status);
+        return response.json();
+      })
+      .then((release) => {
+        const tag = release.tag_name || 'Latest';
+        const date = release.published_at
+          ? new Date(release.published_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+          : '';
+        const assets = release.assets || [];
+        const firmwareAsset = assets.find((item) => /firmware.*\.zip$/i.test(item.name || ''));
+        const macAsset = assets.find((item) => /\.dmg$/i.test(item.name || ''));
+
+        document.getElementById('release-version').textContent = tag;
+        document.getElementById('release-name').textContent = release.name || 'TinyTouch firmware';
+        document.getElementById('release-date').textContent = date ? `Published ${date}` : 'Published on GitHub Releases';
+        if (release.html_url) document.getElementById('release-link').href = release.html_url;
+        if (firmwareAsset?.browser_download_url) {
+          const link = document.getElementById('firmware-zip');
+          link.href = firmwareAsset.browser_download_url;
+          link.textContent = `Download ${firmwareAsset.name}`;
+        }
+        if (macAsset?.browser_download_url) {
+          const dmgLink = document.getElementById('macos-dmg');
+          dmgLink.href = macAsset.browser_download_url;
+          dmgLink.textContent = macAsset.name;
+        }
+      })
+      .catch(() => {
+        document.getElementById('release-version').textContent = 'Unavailable';
+        document.getElementById('release-date').textContent = 'Open GitHub Releases to download firmware.';
+      });
+  </script>
+</body>
+</html>

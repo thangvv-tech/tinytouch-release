@@ -1,0 +1,26 @@
+# Operating System files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Build artifacts & temp files
+*.tmp
+*.log
+dist/
+build/
+release_assets/
+
+# Local Claude Code skills and Hallmark design-session metadata
+.claude/
+.hallmark/
