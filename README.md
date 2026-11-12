@@ -6,13 +6,13 @@
 
 <p align="center">
   <strong>Local biometric unlock for macOS and Linux.</strong><br>
-  Open-source ESP32-S3 hardware. Your fingerprint, device pairing, and credentials stay local.
+  ESP32-S3 biometric hardware. Your fingerprint, device pairing, and credentials stay local.
 </p>
 
 <p align="center">
   <a href="https://thangvv-tech.github.io/tinytouch-release/">Website &amp; Web Flasher</a> ·
   <a href="https://github.com/thangvv-tech/tinytouch-release/releases/latest">Latest Release</a> ·
-  <a href="LICENSE">MIT License</a>
+  <a href="LICENSE">All Rights Reserved</a>
 </p>
 
 ## What it does
@@ -53,4 +53,4 @@ Enable **Settings → Pages → Build and deployment → Source: GitHub Actions*
 
 ## License
 
-TinyTouch and release assets are licensed under the [MIT License](LICENSE).
+TinyTouch firmware, desktop software, and release assets are proprietary and distributed for personal use only. See [LICENSE](LICENSE) for details.
